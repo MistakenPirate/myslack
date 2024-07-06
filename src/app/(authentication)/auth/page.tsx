@@ -7,6 +7,7 @@ import { FcGoogle } from "react-icons/fc";
 import { RxGithubLogo } from "react-icons/rx";
 import { MdOutlineAutoAwesome } from "react-icons/md";
 import { useForm } from "react-hook-form";
+import { Provider } from "@supabase/supabase-js";
 import { z } from "zod";
 
 import Typography from "@/components/ui/typography";
@@ -20,6 +21,8 @@ import {
 } from "@/components/ui/form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Input } from "@/components/ui/input";
+import { supabaseBrowserClient } from "@/supabase/supabaseClient";
+import { registerWithEmail } from "@/actions/register-with-email";
 
 const AuthPage = () => {
   const [isAuthenticating, setIsAuthenticating] = useState(false);
@@ -39,7 +42,25 @@ const AuthPage = () => {
   });
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    console.log(values);
+    setIsAuthenticating(true);
+    const response = await registerWithEmail(values);
+    const { data, error } = JSON.parse(response);
+    setIsAuthenticating(false);
+    if (error) {
+      console.warn("Sign in error", error);
+      return;
+    }
+  }
+
+  async function socialAuth(provider: Provider) {
+    setIsAuthenticating(true);
+    await supabaseBrowserClient.auth.signInWithOAuth({
+      provider,
+      options: {
+        redirectTo: `${location.origin}/auth/callback`,
+      },
+    });
+    setIsAuthenticating(false);
   }
 
   return (
@@ -65,6 +86,7 @@ const AuthPage = () => {
             disabled={isAuthenticating}
             variant="outline"
             className="py-6 border-2 flex space-x-3 rounded-xl"
+            onClick={() => socialAuth("google")}
           >
             <FcGoogle />
             <Typography
@@ -77,6 +99,7 @@ const AuthPage = () => {
             disabled={isAuthenticating}
             variant="outline"
             className="py-6 border-2 flex space-x-3 rounded-xl"
+            onClick={() => socialAuth("github")}
           >
             <RxGithubLogo />
             <Typography
