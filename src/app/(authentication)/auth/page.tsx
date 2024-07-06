@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { BsSlack } from "react-icons/bs";
 import { FcGoogle } from "react-icons/fc";
@@ -9,6 +9,7 @@ import { MdOutlineAutoAwesome } from "react-icons/md";
 import { useForm } from "react-hook-form";
 import { Provider } from "@supabase/supabase-js";
 import { z } from "zod";
+import { useRouter } from "next/navigation";
 
 import Typography from "@/components/ui/typography";
 import { Button } from "@/components/ui/button";
@@ -26,6 +27,23 @@ import { registerWithEmail } from "@/actions/register-with-email";
 
 const AuthPage = () => {
   const [isAuthenticating, setIsAuthenticating] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
+
+  const router = useRouter();
+
+  useEffect(() => {
+    const getCurrUser = async () => {
+      const {
+        data: { session },
+      } = await supabaseBrowserClient.auth.getSession();
+      if (session) {
+        return router.push("/");
+      }
+    };
+
+    getCurrUser();
+    setIsMounted(true);
+  }, [router]);
 
   const formSchema = z.object({
     email: z
@@ -62,6 +80,8 @@ const AuthPage = () => {
     });
     setIsAuthenticating(false);
   }
+
+  if (!isMounted) return null;
 
   return (
     <div className="min-h-screen p-5 grid text-center place-content-center bg-white">
